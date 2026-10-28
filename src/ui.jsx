@@ -5,6 +5,7 @@ import { useSyncStatus, syncNow, unsyncedCount } from './cloud'
 import { naira, toNumber } from './money'
 import { useInstall } from './install'
 import { Icon } from './icons'
+import { Mascot } from './mascot'
 
 export function go(path) {
   location.hash = path
@@ -195,6 +196,41 @@ export function SyncBadge() {
 // The separate differences recorded when a day was closed.
 export function dayParts(day) {
   return [day?.cashDifference || 0, ...Object.values(day?.machineDifferences || {})]
+}
+
+// An in-app "Are you sure?" sheet, used instead of the browser's plain confirm() pop-up.
+//   const [sheet, ask] = useConfirm()
+//   if (await ask({ title, message, confirm: 'Delete', tone: 'danger', mood: 'worried' })) …
+//   …and render {sheet} somewhere in the screen.
+export function useConfirm() {
+  const [request, setRequest] = useState(null)
+  const ask = (options) => new Promise((resolve) => setRequest({ ...options, resolve }))
+  const answer = (yes) => {
+    request.resolve(yes)
+    setRequest(null)
+  }
+  const sheet = request && (
+    <div className="sheet-backdrop" onClick={() => answer(false)}>
+      <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-head">
+          <Mascot mood={request.mood || 'thinking'} size={58} />
+          <div>
+            <h2 id="sheet-title">{request.title}</h2>
+            {request.message && <p className="muted">{request.message}</p>}
+          </div>
+        </div>
+        <div className="sheet-actions">
+          <button className="btn ghost" onClick={() => answer(false)}>
+            {request.cancel || 'Cancel'}
+          </button>
+          <button className={`btn ${request.tone || 'primary'}`} onClick={() => answer(true)} autoFocus>
+            {request.confirm || 'Yes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+  return [sheet, ask]
 }
 
 export function useToast() {

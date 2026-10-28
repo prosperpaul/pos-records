@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import { summarise, naira } from '../money'
-import { Header, MoneyInput, Diff, go } from '../ui'
+import { Header, MoneyInput, Diff, go, useConfirm } from '../ui'
 import { MascotSays, closeMood, koboMessage } from '../mascot'
 
 export default function CloseDay({ day }) {
@@ -12,6 +12,7 @@ export default function CloseDay({ day }) {
   }), [day.id])
   const [cash, setCash] = useState(null)
   const [balances, setBalances] = useState({})
+  const [sheet, ask] = useConfirm()
 
   if (!data) return null
   const t = summarise(day, data.transactions)
@@ -32,7 +33,14 @@ export default function CloseDay({ day }) {
 
   async function close() {
     if (!allEntered) return
-    if (!confirm('Close the day? You won\'t be able to add or change transactions for this day.')) return
+    const yes = await ask({
+      title: 'Close the day?',
+      message: "You won't be able to add or change transactions for this day after closing.",
+      confirm: 'Close day',
+      tone: 'ink',
+      mood: 'thinking',
+    })
+    if (!yes) return
     await db.days.update(day.id, {
       status: 'closed',
       closedAt: Date.now(),
@@ -66,6 +74,7 @@ export default function CloseDay({ day }) {
 
   return (
     <div className="page has-bottom">
+      {sheet}
       <Header title="Close day" />
       <p className="muted">Count your cash and check each machine's balance on the machine.</p>
 

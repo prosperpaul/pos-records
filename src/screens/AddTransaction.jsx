@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, getSetting, saveTransaction, deleteTransaction } from '../db'
 import { TYPES, QUICK_AMOUNTS, fromTiers, naira } from '../money'
-import { Header, MoneyInput, Choice, back, go, useToast, formatTime } from '../ui'
+import { Header, MoneyInput, Choice, back, go, useToast, useConfirm, formatTime } from '../ui'
 import { TypeBadge } from '../icons'
 
 function remembered(key) {
@@ -51,6 +51,7 @@ function Form({ machines, charges, existing, audit, type, day }) {
   const [feeEdited, setFeeEdited] = useState(!!existing)
   const [error, setError] = useState('')
   const [toast, showToast] = useToast()
+  const [sheet, ask] = useConfirm()
   const amountRef = useRef()
 
   const readOnly = existing && (existing.deleted || existing.dayId !== day?.id)
@@ -98,7 +99,14 @@ function Form({ machines, charges, existing, audit, type, day }) {
   }
 
   async function remove() {
-    if (!confirm('Delete this transaction? It will still show in history as deleted.')) return
+    const yes = await ask({
+      title: 'Delete this transaction?',
+      message: 'It will be crossed out in History, so the owner can still see it was deleted.',
+      confirm: 'Delete',
+      tone: 'danger',
+      mood: 'worried',
+    })
+    if (!yes) return
     await deleteTransaction(existing.id)
     back()
   }
@@ -208,6 +216,7 @@ function Form({ machines, charges, existing, audit, type, day }) {
       )}
 
       {toast}
+      {sheet}
       {!readOnly && (
         <div className="bottom-bar two">
           {existing ? (

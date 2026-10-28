@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, getSetting, setSetting, exportBackup, addMachine as createMachine, updateMachine, DEFAULT_FEES, PROVIDERS } from '../db'
-import { Header, TierEditor, Choice, InstallBanner, SyncBadge, go, formatPhone } from '../ui'
+import { Header, TierEditor, Choice, InstallBanner, SyncBadge, go, formatPhone, useConfirm } from '../ui'
 import { cloudEnabled, logOut, unsyncedCount } from '../cloud'
 import { Icon } from '../icons'
 
@@ -13,6 +13,7 @@ export default function Settings() {
     account: await getSetting('account', null),
   }))
   const [persisted, setPersisted] = useState(null)
+  const [sheet, ask] = useConfirm()
   useEffect(() => {
     navigator.storage?.persisted?.().then(setPersisted).catch(() => {})
   }, [])
@@ -24,10 +25,23 @@ export default function Settings() {
 
   async function signOut() {
     const waiting = await unsyncedCount()
-    const warning = waiting
-      ? `${waiting} records are not backed up yet and will be LOST. Connect to the internet first. Log out anyway?`
-      : 'Log out? Records will be removed from this phone. They stay safe online.'
-    if (confirm(warning)) await logOut()
+    const yes = await ask(
+      waiting
+        ? {
+            title: `${waiting} records aren't backed up yet`,
+            message: 'If you log out now they will be LOST. Connect to the internet and wait for "Backed up" first.',
+            confirm: 'Log out anyway',
+            tone: 'danger',
+            mood: 'worried',
+          }
+        : {
+            title: 'Log out?',
+            message: 'Records will be removed from this phone. They stay safe online, and come back when you log in.',
+            confirm: 'Log out',
+            tone: 'ink',
+          },
+    )
+    if (yes) await logOut()
   }
 
   async function addMachine() {
@@ -46,6 +60,7 @@ export default function Settings() {
 
   return (
     <div className="page">
+      {sheet}
       <Header title="Settings" onBack={() => go('#/')} />
       <SyncBadge />
 

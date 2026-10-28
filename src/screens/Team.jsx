@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { getSetting } from '../db'
 import { newJoinCode, setMemberActive } from '../cloud'
-import { Header, SyncBadge, go, formatPhone } from '../ui'
+import { Header, SyncBadge, go, formatPhone, useConfirm } from '../ui'
 import { MascotSays } from '../mascot'
 
 export default function Team() {
@@ -13,6 +13,7 @@ export default function Team() {
     standName: await getSetting('standName', ''),
   }))
   const [error, setError] = useState('')
+  const [sheet, ask] = useConfirm()
 
   if (!data) return null
   const { account, code, members, standName } = data
@@ -29,13 +30,26 @@ export default function Team() {
     }
   }
 
-  const newCode = () => {
-    if (!confirm('Make a new code? The old code will stop working for new attendants.')) return
-    run(() => newJoinCode(account.outletId, code))
+  const newCode = async () => {
+    const yes = await ask({
+      title: 'Make a new join code?',
+      message: 'The old code will stop working. Attendants who already joined are not affected.',
+      confirm: 'New code',
+    })
+    if (yes) run(() => newJoinCode(account.outletId, code))
   }
 
-  const setActive = (m, active) => {
-    if (!active && !confirm(`Remove ${m.name || 'this attendant'}? They won't be able to see or add records for your stand.`)) return
+  const setActive = async (m, active) => {
+    if (!active) {
+      const yes = await ask({
+        title: `Remove ${m.name || 'this attendant'}?`,
+        message: "They won't be able to see or add records for your stand. You can allow them again later.",
+        confirm: 'Remove',
+        tone: 'danger',
+        mood: 'worried',
+      })
+      if (!yes) return
+    }
     run(() => setMemberActive(account.outletId, m.user_id, active))
   }
 
@@ -43,6 +57,7 @@ export default function Team() {
 
   return (
     <div className="page">
+      {sheet}
       <Header title="Team" onBack={() => go('#/settings')} />
       <SyncBadge />
 
