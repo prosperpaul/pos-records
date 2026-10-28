@@ -1,0 +1,27 @@
+{
+  "name": "pos-records",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "icons": "pwa-assets-generator"
+  },
+  "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/figtree": "^5.3.0",
+    "dexie": "^4.4.6",
+    "dexie-react-hooks": "^4.4.0",
+    "firebase": "^13.1.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@vite-pwa/assets-generator": "^2.0.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "vite": "^8.3.5",
+    "vite-plugin-pwa": "^2.0.0"
+  }
+}

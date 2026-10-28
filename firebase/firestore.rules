@@ -1,0 +1,90 @@
+rules_version = '2';
+
+// POS Records access rules.
+// Paste this into Firebase → Firestore Database → Rules, then click Publish.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function memberPath(o) {
+      return /databases/$(database)/documents/outlets/$(o)/members/$(request.auth.uid);
+    }
+    function isMember(o) {
+      return signedIn() && exists(memberPath(o)) && get(memberPath(o)).data.active == true;
+    }
+    function isOwner(o) {
+      return isMember(o) && get(memberPath(o)).data.role == 'owner';
+    }
+    function outletOwner(o) {
+      return get(/databases/$(database)/documents/outlets/$(o)).data.ownerId;
+    }
+    // Every record carries the server's time, so phones can ask "what changed since…".
+    function stamped() {
+      return request.resource.data.serverUpdatedAt == request.time;
+    }
+
+    // Which stand a user belongs to, so they can log in on a new phone.
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Join code → stand. Can be looked up one at a time, never listed.
+    match /joinCodes/{code} {
+      allow get: if signedIn();
+      allow create: if signedIn() && outletOwner(request.resource.data.outletId) == request.auth.uid;
+      allow delete: if signedIn() && outletOwner(resource.data.outletId) == request.auth.uid;
+    }
+
+    match /outlets/{o} {
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow read: if isMember(o);
+      allow update: if isOwner(o) && request.resource.data.ownerId == resource.data.ownerId;
+
+      match /members/{uid} {
+        allow read: if isMember(o) || (signedIn() && request.auth.uid == uid);
+        // The owner adds themself when creating the stand; an attendant needs the stand's join code.
+        // A removed attendant's record already exists, so they can't re-add themselves.
+        allow create: if signedIn() && request.auth.uid == uid && request.resource.data.uid == uid && (
+          (request.resource.data.role == 'owner' && outletOwner(o) == request.auth.uid)
+          || (request.resource.data.role == 'attendant'
+              && request.resource.data.active == true
+              && get(/databases/$(database)/documents/joinCodes/$(request.resource.data.joinCode)).data.outletId == o)
+        );
+        // The owner can only switch someone on or off, not change their role.
+        allow update: if isOwner(o) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active']);
+      }
+
+      match /machines/{id} {
+        allow read: if isMember(o);
+        allow create, update: if isOwner(o) && stamped();
+      }
+
+      match /days/{id} {
+        allow read: if isMember(o);
+        allow create, update: if isMember(o) && stamped();
+      }
+
+      // Who created a record comes from the login and can never be changed.
+      match /transactions/{id} {
+        allow read: if isMember(o);
+        allow create: if isMember(o) && stamped()
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.updatedBy == request.auth.uid;
+        allow update: if isMember(o) && stamped()
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.updatedBy == request.auth.uid;
+      }
+
+      // Edit and delete history: can be added, never changed (a retried upload only refreshes the time).
+      match /audit/{id} {
+        allow read: if isMember(o);
+        allow create: if isMember(o) && stamped() && request.resource.data.by == request.auth.uid;
+        allow update: if isMember(o) && stamped()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['serverUpdatedAt']);
+      }
+    }
+  }
+}
