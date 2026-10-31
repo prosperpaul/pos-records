@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { getSetting } from './db'
 import { useSyncStatus, syncNow, unsyncedCount } from './cloud'
 import { naira, toNumber } from './money'
-import { useInstall } from './install'
+import { useInstall, installSteps } from './install'
 import { Icon } from './icons'
 import { Mascot } from './mascot'
 
@@ -157,12 +157,17 @@ export function InstallBanner({ always }) {
     )
   }
   if (!always) return null
+  if (!secure) return <p className="muted small">This link is not secure (http), so the app can't be installed from it. Open the https link instead.</p>
+  const { title, steps } = installSteps()
   return (
-    <p className="muted small">
-      {secure
-        ? 'To install: open the Chrome menu (⋮) and tap "Install app" or "Add to Home screen".'
-        : 'This link is not secure (http), so the app cannot be installed from it. Open the https link instead.'}
-    </p>
+    <div>
+      <strong>{title}</strong>
+      <ol className="steps">
+        {steps.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
+      </ol>
+    </div>
   )
 }
 
@@ -201,7 +206,8 @@ export function dayParts(day) {
 // An in-app "Are you sure?" sheet, used instead of the browser's plain confirm() pop-up.
 //   const [sheet, ask] = useConfirm()
 //   if (await ask({ title, message, confirm: 'Delete', tone: 'danger', mood: 'worried' })) …
-//   …and render {sheet} somewhere in the screen.
+//   …and render {sheet} somewhere in the screen. `cancel: false` shows only the main button.
+//   `message` can be text or a list of steps (array).
 export function useConfirm() {
   const [request, setRequest] = useState(null)
   const ask = (options) => new Promise((resolve) => setRequest({ ...options, resolve }))
@@ -216,13 +222,23 @@ export function useConfirm() {
           <Mascot mood={request.mood || 'thinking'} size={58} />
           <div>
             <h2 id="sheet-title">{request.title}</h2>
-            {request.message && <p className="muted">{request.message}</p>}
+            {Array.isArray(request.message) ? (
+              <ol className="steps">
+                {request.message.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            ) : (
+              request.message && <p className="muted">{request.message}</p>
+            )}
           </div>
         </div>
         <div className="sheet-actions">
-          <button className="btn ghost" onClick={() => answer(false)}>
-            {request.cancel || 'Cancel'}
-          </button>
+          {request.cancel !== false && (
+            <button className="btn ghost" onClick={() => answer(false)}>
+              {request.cancel || 'Cancel'}
+            </button>
+          )}
           <button className={`btn ${request.tone || 'primary'}`} onClick={() => answer(true)} autoFocus>
             {request.confirm || 'Yes'}
           </button>
