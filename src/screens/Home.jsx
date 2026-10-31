@@ -1,10 +1,9 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, todayId } from '../db'
 import { TYPES, summarise, naira, DAILY_CASH_OUT_LIMIT } from '../money'
-import { Diff, InstallBanner, SyncBadge, RoundLink, go, formatDay, dayParts, useConfirm } from '../ui'
+import { Diff, InstallBanner, InstallChip, SyncBadge, RoundLink, go, formatDay, dayParts } from '../ui'
 import { Icon, TypeBadge } from '../icons'
 import { Mascot } from '../mascot'
-import { useInstall, installSteps } from '../install'
 
 const SUBTITLES = {
   withdrawal: 'Customer takes cash',
@@ -16,15 +15,6 @@ const SUBTITLES = {
 }
 
 function TopBar({ standName }) {
-  // A small Install button stays in reach until the app is installed. If the browser offers
-  // its own install pop-up we use it; otherwise we show the steps for this phone.
-  const { installed, canPrompt, install } = useInstall()
-  const [sheet, ask] = useConfirm()
-  const onInstall = () => {
-    if (canPrompt) return install()
-    const { title, steps } = installSteps()
-    ask({ title, message: steps, confirm: 'Got it', cancel: false, mood: 'wave' })
-  }
   return (
     <div className="topbar">
       <div className="brand">
@@ -35,12 +25,7 @@ function TopBar({ standName }) {
         </div>
       </div>
       <div className="topbar-actions">
-        {!installed && window.isSecureContext && (
-          <button className="install-chip" onClick={onInstall}>
-            Install
-          </button>
-        )}
-        {sheet}
+        <InstallChip />
         <RoundLink icon="gear" label="Settings" to="#/settings" />
       </div>
     </div>

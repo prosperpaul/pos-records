@@ -1495,3 +1495,28 @@ body {
 .steps li + li {
   margin-top: 6px;
 }
+
+/* Brand + Install row at the top of the first screens */
+.first-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0 0;
+}
+
+.first-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--display);
+  font-weight: 800;
+}
+
+.first-brand img {
+  border-radius: 8px;
+}
+
+.first-top + .welcome {
+  padding-top: 20px;
+}

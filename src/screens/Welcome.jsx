@@ -1,10 +1,17 @@
 import { setSetting } from '../db'
-import { go } from '../ui'
+import { go, InstallChip } from '../ui'
 import { MascotSays } from '../mascot'
 
 export default function Welcome() {
   return (
     <div className="page">
+      <div className="first-top">
+        <span className="first-brand">
+          <img src="/icon.svg" alt="" width="28" height="28" />
+          POS Records
+        </span>
+        <InstallChip />
+      </div>
       <div className="welcome">
         <MascotSays mood="wave" size={92}>
           Hello! I'm Kobo. I'll help you count every naira.

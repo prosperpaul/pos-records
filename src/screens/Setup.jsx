@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { db, addMachine, setSetting, DEFAULT_CHARGES, DEFAULT_FEES, PROVIDERS } from '../db'
-import { go } from '../ui'
+import { go, InstallChip } from '../ui'
 import { MascotSays } from '../mascot'
 
 export default function Setup() {
@@ -33,6 +33,13 @@ export default function Setup() {
 
   return (
     <div className="page has-bottom">
+      <div className="first-top">
+        <span className="first-brand">
+          <img src="/icon.svg" alt="" width="28" height="28" />
+          POS Records
+        </span>
+        <InstallChip />
+      </div>
       <div className="welcome compact">
         <MascotSays mood="wave" size={80}>
           Hello! I'm Kobo. Tell me which POS machines you use.

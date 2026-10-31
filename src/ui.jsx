@@ -171,6 +171,27 @@ export function InstallBanner({ always }) {
   )
 }
 
+// A small Install button shown on the first screens and home until the app is installed. If the
+// browser offers its own install pop-up we use it; otherwise we show the steps for this phone.
+export function InstallChip() {
+  const { installed, canPrompt, install } = useInstall()
+  const [sheet, ask] = useConfirm()
+  if (installed || !window.isSecureContext) return null
+  const onInstall = () => {
+    if (canPrompt) return install()
+    const { title, steps } = installSteps()
+    ask({ title, message: steps, confirm: 'Got it', cancel: false, mood: 'wave' })
+  }
+  return (
+    <>
+      <button className="install-chip" onClick={onInstall}>
+        Install
+      </button>
+      {sheet}
+    </>
+  )
+}
+
 // One line under the header telling a logged-in user whether their records are backed up.
 export function SyncBadge() {
   const status = useSyncStatus()
